@@ -9,5 +9,8 @@
 # Preparations
 
     python3 -m virtualenv venv --python=$(which python3)
-    python3 ./conversion.py kulutustiedot_2463453700_2017.xlsx -o file_kwh_2017.csv house_energy -t xlsx
+    source venv/bin/activate
+    pip install -r requirements.txt
+
+    ./get_energy_data.sh
 
