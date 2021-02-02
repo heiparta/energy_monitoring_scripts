@@ -4,6 +4,8 @@ import logging
 import requests
 import yaml
 
+from datetime import datetime, timedelta
+
 BASE_URL = "https://oma.hso.fi/"
 LOGIN_PATH = "login.php"
 DATA_PATH = "getdata_excel.php"
@@ -39,7 +41,7 @@ class HSO():
         resp = self.session.post(BASE_URL + LOGIN_PATH, data=data, headers=headers)
         resp.raise_for_status()
 
-    def get_data(self, year):
+    def get_data(self, start, end):
         headers = {
                 "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:85.0) Gecko/20100101 Firefox/85.0",
                 "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
@@ -47,8 +49,8 @@ class HSO():
         urlparams = dict(
                 type="interval",
                 temp="1",
-                start="01.01.{}".format(year),
-                end="31.12.{}".format(year),
+                start=start.strftime("%d.%m.%Y."),
+                end=end.strftime("%d.%m.%Y."),
                 changekp="3",
             )
         resp = self.session.get(BASE_URL + DATA_PATH, params=urlparams, headers=headers)
@@ -63,8 +65,10 @@ def main(args):
         config = yaml.load(f, Loader=yaml.SafeLoader)
     hso = HSO(config)
     hso.do_login()
-    data = hso.get_data(args.year)
-    output_filename = "data_{}.xlsx".format(args.year)
+    end = datetime.utcnow()
+    start = end - timedelta(weeks=1)
+    data = hso.get_data(start, end)
+    output_filename = "data_current.xlsx"
     with open(output_filename, "wb") as f:
         f.write(data)
 
@@ -72,7 +76,6 @@ def main(args):
 if __name__ == "__main__":
     """ This is executed when run from the command line """
     parser = argparse.ArgumentParser()
-    parser.add_argument("year", help="Year of data to get")
     parser.add_argument("-c", "--config")
     parser.add_argument(
         "-v",
